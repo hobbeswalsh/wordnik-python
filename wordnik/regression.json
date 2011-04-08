@@ -1,0 +1,129 @@
+{
+	"id":1,
+    "resources" : [{
+        "id" : 1,
+        "name" : "Authenticate user",
+        "httpMethod" : "GET",
+        "path" : "/account.{format}/authenticate/{username}",
+        "suggestedMethodName" : "authenticate"
+    },
+    {
+        "id" : 2,
+        "name" : "API Token status",
+        "httpMethod" : "GET",
+        "path" : "/account.{format}/apiTokenStatus",
+        "suggestedMethodName" : "getApiTokenStatus"
+    },
+    {
+        "id" : 3,
+        "name" : "Save authenticate",
+        "httpMethod" : "POST",
+        "path" : "/account.{format}/authenticate/{username}",
+        "suggestedMethodName" : "authenticatePost"
+    },
+    {
+        "id" : 4,
+        "name" : "Get user",
+        "httpMethod" : "GET",
+        "path" : "/account.{format}/user",
+        "suggestedMethodName" : "getLoggedInUser"
+    },
+    {
+        "id" : 5,
+        "name" : "Get word lists for user",
+        "httpMethod" : "GET",
+        "path" : "/account.{format}/wordLists",
+        "suggestedMethodName" : "getForCurrentUser"
+    },
+    {
+        "id" : 6,
+        "name" : "Gets the examples for the word",
+        "httpMethod" : "GET",
+        "path" : "/word.{format}/{word}/examples",
+        "suggestedMethodName" : "getExamples"
+    }
+    
+    ],
+    "testSuites" : [{
+        "id" : 1,
+        "name" : "Tests User account related APIs",
+        "testCases" : [{
+            "name" : "Authenticate User with valid user name and password",
+            "id" : 1,
+            "resourceId" : 1,
+            "input" : {
+                "username" : "${data.userList[0].userName}",
+                "password" : "${data.userList[0].password}"
+            },
+            "assertions" : [{
+                "actualOutput" : "${output.data(1.1.1).token}",
+                "condition" : "!=",
+                "expectedOutput" : "NULL"
+            },
+            {
+                "actualOutput" : "${output.data(1.1.1).userId}",
+                "condition" : "!=",
+                "expectedOutput" : "NULL"
+            }
+            ]
+        },   
+        {
+            "name" : "Get API token status",
+            "id" : 2,
+            "resourceId" : 2,
+            "assertions" : [{
+                "actualOutput" : "${output.data(1.1.2).totalRequests}",
+                "condition" : "==",
+                "expectedOutput" : "${data.apiTokenStatusList[0].totalRequests}"
+            }
+            ]
+        },
+        {
+            "name" : "Get User",
+            "id" : 3,
+            "resourceId" : 4,
+            "input" : {
+                "authToken" : "${output.data(1.1.1).token}"
+            },
+            "assertions" : [{
+                "actualOutput" : "${output.data(1.1.3).email}",
+                "condition" : "==",
+                "expectedOutput" : "${data.userList[0].email}"
+            }
+            ]
+        },
+        {
+            "name" : "Get Word Lists",
+            "id" : 4,
+            "resourceId" : 5,
+            "input" : {
+                "authToken" : "${output.data(1.1.1).token}",
+                "skip" : "0",
+                "limit" : "10"
+            },
+            "assertions" : [{
+                "actualOutput" : "${output.data(1.1.4).size}",
+                "condition" : "==",
+                "expectedOutput" : 1
+            }
+            ]
+        },
+        {
+            "name" : "Get Word examples",
+            "id" : 5,
+            "resourceId" : 6,
+            "input" : {
+                "word" : "cat",
+                "skip" : "1",
+                "limit" : "5"
+            },
+            "assertions" : [{
+                "actualOutput" : "${output.data(1.1.5).examples.size}",
+                "condition" : ">",
+                "expectedOutput" : 2
+            }
+            ]
+        }                   
+        ]
+    }]
+}

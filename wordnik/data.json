@@ -1,0 +1,30 @@
+{
+  "userList":[
+  	{
+  		"userName":"ramesh.pidikiti",
+  		"password":"pidix123",
+  		"email":"ramesh@wordnik.com"
+  	},
+  	{
+  		"userName":"ramesh.pidikiti",
+  		"password":"pidix123",
+  		"email":"ramesh@wordnik.com"
+  	}
+  ],
+  "apiTokenStatusList":[
+  	{
+  		"token":"toekn value",
+  		"totalRequests":18
+  	},
+  	{
+  		"token":"toekn value",
+  		"totalRequests":18
+  	}
+  ],
+  "wordObjectList":[
+  	{
+  		"word":"test word",
+  		"vulgar":"yes"
+  	}
+  ]
+}
