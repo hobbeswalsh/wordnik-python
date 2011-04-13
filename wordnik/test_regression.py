@@ -15,56 +15,32 @@ test_case_output = {}
 # .size
 #     
 
-class OGNLObject(object):
-    regex = re.compile('\$\{(.*)\}')
-    
-    def __init__(self, data=dict()):
-        self.data    = data
-    
-    def get(self, item):
-        if self.data is None:
-            return None
-        else:
-            return self.data.get(item)
-    
-    def setData(self, data):
-        self.data = data
-    
-    def parseOgnl(self, expr):
-        found = self.regex.findall(expr)
-        if found == []:
-            return expr
-        else:
-            components = found[0].split(".")
-            print components
-    
 
 class TestIntegration(unittest.TestCase):
         def setUp(self):
-            self.id      = 1
-            self.w       = Wordnik(api_key='9554cd51b3ae7593536040047c20e2ac3ce71b2fd01cf1a27')
-            self.results = OGNLObject()
-            self.tests   = OGNLObject(data=json.load(open('regression.json')))
-            self.data    = OGNLObject(data=json.load(open('data.json')))
-            self.output  = {"data": {}}
-            self.output['data'].update( {self.id: {}})
+            self.w        = Wordnik(api_key='9554cd51b3ae7593536040047c20e2ac3ce71b2fd01cf1a27')
+            self.tests    = json.load(open('regression.json'))
+            self.data     = json.load(open('data.json'))
+            self.scriptId = self.tests.get('id')
+            self.output   = {}
         
         def test_regression(self):
             self.resources = self.tests.get('resources')
             self.testSuites = self.tests.get('testSuites')
             for suite in self.testSuites:
                 suiteName = suite.get('name')
-                suiteId = suite.get('id')
-                self.output['data'][self.id].update({ suiteId: {}})
+                self.suiteId = suite.get('id')
                 cases = suite.get('testCases')
-                print "Suite {0} - {1}".format(suiteId, suiteName)
+                print "Suite {0} - {1}".format(self.suiteId, suiteName)
                 for case in cases:
                     self.runTestCase(case)
+            from pprint import pprint
+            pprint(self.output)
         
         def runTestCase(self, case):
             caseName = case.get('name')
-            caseId   = case.get('id')
-            print "Running test case {0} -  {1}".format(caseId, caseName)
+            self.caseId   = case.get('id')
+            print "Running test case {0} -  {1}".format(self.caseId, caseName)
             resource   = self.findResourceById(case.get('resourceId'))
             httpMethod = resource.get('httpMethod')
             path       = resource.get('path')
@@ -80,9 +56,11 @@ class TestIntegration(unittest.TestCase):
                     return None
                 methodInput.update( {str(k): str(v)} )
 
-            print "testing {0}".format(methodName)
-
+            # print "testing {0}".format(methodName)
+            print method_under_test
+            print methodInput
             output = method_under_test(**methodInput)
+            self.output["{0}.{1}.{2}".format(self.scriptId, self.suiteId, self.caseId)] = output
         
         def findResourceById(self, n):
             for resource in self.resources:
@@ -90,22 +68,57 @@ class TestIntegration(unittest.TestCase):
                     return resource
         
         def parse_ognl(self, s):
-            ognl_re = re.compile('\$\{(.*)\}')
-            found = ognl_re.findall(s)
-            if found == []:
+            ## Will find anything between "${" and "}"
+            ognl_re = re.compile('\$\{(?P<ognl>.*)\}')
+            found = ognl_re.search(s)
+            
+            ## This doesn't look like an OGNL expression
+            if not found:
                 return s
+            ## start parsing the OGNL...  D-;
             else:
-                path = found[0].split(".")
-                obj = path[0]
+                ## split on periods that don't have numbers next to them, then reverse so we can "pop" off the list
+                special_period_re = re.compile
+                path = found.groupdict()['ognl'].split(".")
+                print path
+                path.reverse()
+                
+                ## do we need to calculate the size?
+                if path[0] == "size":
+                    doSize = True
+                else:
+                    doSize = False
+                ## regular expression will match something[x]
+                list_re = re.compile('(?P<listname>.*)\[(?P<item>.*)\]')
+                
+                
+                obj = path.pop()
                 if obj == "data":
                     dataSource = self.data
+                    while path:
+                        nextElement = path.pop()
+                        isList = list_re.search(nextElement)
+                        if isList:
+                            ## get the list name and element from the regex match
+                            listname = isList.groupdict()['listname']
+                            item     = int(isList.groupdict()['item'])
+                            ## fetch the list and the item in the list
+                            l = dataSource.get(listname)
+                            dataSource = l[item]
+                        else:
+                            ## we can just do a "get"
+                            dataSource = dataSource.get(nextElement)
+                    return dataSource
+                            
                 elif obj == "output":
                     dataSource = self.output
+                    dataLocation = path.pop()
+                    print dataLocation
                 else:
                     print "got an unknown data source: {0}".format(path)
                 
                     
-                print path
+                # print path
                 return None
 
 if __name__ == "__main__":
