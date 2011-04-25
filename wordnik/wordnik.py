@@ -157,7 +157,7 @@ class Wordnik(object):
         
         """
         
-        path = "/word.%s?multi=true" % (kwargs.get('format') or DEFAULT_FORMAT)
+        path = "/word.{0}?multi=true".format(kwargs.get('format') or DEFAULT_FORMAT)
         
         
         for calls_made, call in enumerate(calls):
